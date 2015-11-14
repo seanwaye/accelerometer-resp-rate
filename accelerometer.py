@@ -63,5 +63,3 @@ row_arr = np.array(rows)               #creates array from list
 np.savetxt("/Users/kevinwong/Desktop/Projects/accelerometer-resp-rate/test_radio2.txt", row_arr) #save data in file (load w/np.loadtxt())
 
 ser.close() #closes serial connection (very important to do this! if you have an error partway through the code, type this into the cmd line to close the connection)
-
-}}}

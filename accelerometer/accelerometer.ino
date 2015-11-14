@@ -19,13 +19,17 @@ void loop() {
   int yValue = analogRead(A2);
   
   // print out the value you read:
-  Serial.print("X value is: ");
-  Serial.println(xValue);
-  Serial.print("Y value is: ");
-  Serial.println(yValue);
-  Serial.print("Z value is: ");
+  //Serial.print("X value is: ");
+  Serial.print(xValue);
+  Serial.print("\t");
+  Serial.print(yValue);
+  Serial.print("\t");
   Serial.println(zValue);
-  Serial.println(" "); // Makes a space between the readings
-  delay(1000);  // delay of 1000 ms (1 second) - Gives us time to better read the Serial Monitor
+  //Serial.print("Y value is: ");
+  //Serial.println(yValue);
+  //Serial.print("Z value is: ");
+  //Serial.println(zValue);
+  //Serial.println(" "); // Makes a space between the readings
+  //delay(1000);  // delay of 1000 ms (1 second) - Gives us time to better read the Serial Monitor
                 // speed this up by lowering the number
 }
