@@ -2,6 +2,7 @@ import serial
 import matplotlib.pyplot as plt
 import numpy as np
 import win32com.client
+import csv
 
 connected = False
 
@@ -52,6 +53,13 @@ for i in range(length):     #while you are taking data
     xline.set_ydata(x)                 #sets ydata to new list
     yline.set_ydata(y)
     zline.set_ydata(z)
+
+    with open('data.csv', 'w') as csvfile:     #Writes to csv file
+    fieldnames = ['X-AXIS', 'Y-AXIS', 'Z-AXIS']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    writer.writeheader()
+    writer.writerow({'X-AXIS': x, 'Y-AXIS': y, 'Z-AXIS': z})
  
     plt.pause(0.001)                   #in seconds
     plt.draw()                         #draws new plot
@@ -60,6 +68,6 @@ for i in range(length):     #while you are taking data
 rows = zip(x, y, z)                  #combines lists together
 
 row_arr = np.array(rows)               #creates array from list
-np.savetxt("/Users/kevinwong/Desktop/Projects/accelerometer-resp-rate/test_radio2.txt", row_arr) #save data in file (load w/np.loadtxt())
+#np.savetxt("/Users/kevinwong/Desktop/Projects/accelerometer-resp-rate/test_radio2.txt", row_arr) #save data in file (load w/np.loadtxt())
 
 ser.close() #closes serial connection (very important to do this! if you have an error partway through the code, type this into the cmd line to close the connection)
