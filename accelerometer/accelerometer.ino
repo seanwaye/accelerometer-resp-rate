@@ -16,17 +16,17 @@ void setup() {
 void loop() {
   // read the input on analog pin 0:
   int xValue = analogRead(A0);
-  int zValue = analogRead(A1);
-  int yValue = analogRead(A2);
+  int yValue = analogRead(A1);
+  int zValue = analogRead(A2);
 
-  if (xValue > 900)
-    {
-       digitalWrite(led_red, HIGH);
-    }
-  else{
-      digitalWrite(led_red, LOW);
-  }
-    
+//  if (xValue > 900)
+//    {
+//       digitalWrite(led_red, HIGH);
+//    }
+//  else{
+//      digitalWrite(led_red, LOW);
+//  }
+//    
   // print out the value you read:
   //Serial.print("X value is: ");
   Serial.print(xValue);
@@ -39,6 +39,6 @@ void loop() {
   //Serial.print("Z value is: ");
   //Serial.println(zValue);
   //Serial.println(" "); // Makes a space between the readings
-  delay(100);  // delay of 1000 ms (1 second) - Gives us time to better read the Serial Monitor
+  delay(100);  // delay of 100 ms (0.1 second) - Gives us time to better read the Serial Monitor
                 // speed this up by lowering the number
 }
