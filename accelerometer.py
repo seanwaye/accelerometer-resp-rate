@@ -25,7 +25,7 @@ while not connected:
 
 plt.ion()                    #sets plot to animation mode
 
-length = 300                 #determines length of data taking session (in data points)
+length = 5                 #determines length of data taking session (in data points)
 x = [0]*length               #create empty variable of length of test
 y = [0]*length
 z = [0]*length
@@ -35,7 +35,9 @@ yline, = plt.plot(y)
 zline, = plt.plot(z)
 plt.ylim(450,550)        #sets the y axis limits
 breathCounter = 0
+counter = 0
 for i in range(10*length):     #while you are taking data
+    counter +=counter
     data = ser.readline()    #reads until it gets a carriage return. MAKE SURE THERE IS A CARRIAGE RETURN OR IT READS FOREVER
     sep = data.split()      #splits string into a list at the tabs
     #print sep
@@ -59,21 +61,25 @@ for i in range(10*length):     #while you are taking data
     yline.set_ydata(y)
     zline.set_ydata(z)
 
-    with open('data.csv', 'w') as csvfile:     #Writes to csv file
-    fieldnames = ['X-AXIS', 'Y-AXIS', 'Z-AXIS']
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    #with open('data.csv', 'w') as csvfile:     #Writes to csv file
+    #fieldnames = ['X-AXIS', 'Y-AXIS', 'Z-AXIS']
+    #writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-    writer.writeheader()
-    writer.writerow({'X-AXIS': x, 'Y-AXIS': y, 'Z-AXIS': z})
+    #writer.writeheader()
+    #writer.writerow({'X-AXIS': x, 'Y-AXIS': y, 'Z-AXIS': z})
  
     plt.pause(0.001)                   #in seconds
-    plt.draw()                         #draws new plot
+    if (counter%length) == 0:
+        plt.savefig('breathingplot.pdf')
+    else:
+        plt.draw()                         #draws new plot
 
 
 rows = zip(x, y, z)                  #combines lists together
-
-row_arr = np.array(rows)               #creates array from list
-#print row_arr
-#np.savetxt("C:\Users\Karen\Documents\test_radio2.txt", row_arr) #save data in file (load w/np.loadtxt())
+plt.savefig('lastplot.pdf')
+print 'saved'
+row_arr = np.asarray(rows)               #creates array from list
+print row_arr
+np.savetxt("test_radio2.csv", row_arr, delimiter=",") #save data in file (load w/np.loadtxt())
 
 ser.close() #closes serial connection (very important to do this! if you have an error partway through the code, type this into the cmd line to close the connection)
