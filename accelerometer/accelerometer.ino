@@ -1,5 +1,5 @@
 /*
-  
+  Measures resp rate through 1ms trigger ISR overflow
  */
 
 int led_red = 8;
@@ -74,6 +74,8 @@ void loop() {
   // z should chill around 600 while others around 500
   // use x - oscillations
   if ( zValue > 540 ){
+    // setup average
+    initializePinsx();
     // wait while low and determine min value
     while ( xValue < average ){ 
       readPins();
@@ -130,6 +132,12 @@ void initializePinsx(){
       xValMax = xValue;
     }
   }
-  while(xValue < 500);
+  while(xValue < 500){
+    readPins();
+    if(xValue < xValMin){
+      xValMin = xValue;
+    }
+  }
+  average = (xValMin + xValMax) / 2;
   digitalWrite(init_led, LOW);
 }
