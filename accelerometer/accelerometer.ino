@@ -40,7 +40,7 @@
             value recieved on the accelerometer pins
 */
 int led_red = 8;
-int test_pin = ##;
+int test_pin = 2;
 unsigned int tcnt2;
 int toggle = 0;
 float MS = 0.001;
@@ -117,7 +117,7 @@ void timerinit(){
   tcnt2 = 131;
   
   // load and enable the timer
-  TCNT = tcnt2;
+  TCNT2 = tcnt2;
   // Don't enable the timer yet.. we want to synchronize it with a breath
   //TIMSK2 |= (1<< TOIE2);
 }
@@ -125,9 +125,10 @@ void timerinit(){
 //ISR for timer2 overflow
 ISR(TIMER2_OVF_vect){
   // reload the timer
-  TCNT = tcnt2;
+  TCNT2 = tcnt2;
   // write to digital output pin to see with oscilloscope
   digitalWrite(test_pin, toggle == 0 ? HIGH : LOW);
+  digitalWrite(led_red, toggle == 0 ? HIGH : LOW);
   toggle = ~toggle;
   // increment period by 1 ms
   period = period + MS;
@@ -146,6 +147,7 @@ void loop() {
     // now that we have initialized the average, we shouldn't do it again - it takes a few breaths
     // stay in while loop while we're still in the same position. Should only leave if the values are 
     // changing.
+    
     while( zValue > 540){
       int min = 1024;
       int max = 0;
@@ -164,7 +166,7 @@ void loop() {
         }
       }
       // update averge constantly
-      average = (min + max)/2;
+      average = (0.1*(min + max)/2)+(0.9*average); //edited average
       // start the timer here - breath went low
       TIMSK2 |= (1<< TOIE2);
       // Timer is going up and counting ms - wait one period
@@ -176,9 +178,9 @@ void loop() {
       }
       // one period has passed - stop the timer and reset timer value
       TIMSK2 &= ~(1<<TOIE2);
-      TCNT = tcnt2;
+      TCNT2 = tcnt2;
       // great! now number of ms passed should be in period
-      Serial.print(period);
+      //Serial.print(period);
       // reset period to 0 so that we can go back to the beginning and increment again
       // reset to measure next breath
       period = 0;
@@ -191,11 +193,15 @@ void readPins(){
   xValue = analogRead(A0);
   yValue = analogRead(A1);
   zValue = analogRead(A2);
-  //Serial.print(xValue);
-  //Serial.print("\t");
-  //Serial.print(yValue);
-  //Serial.print("\t");
-  //Serial.println(zValue);
+  Serial.print(average);
+  Serial.print("\t");
+  Serial.print(period);
+  Serial.print("\t");
+  Serial.print(xValue); //un-uncommented serial.print lines here
+  Serial.print("\t");
+  Serial.print(yValue);
+  Serial.print("\t");
+  Serial.println(zValue);
 }
 
 // initializes the pins such that we have a beginning average value
@@ -209,8 +215,10 @@ void initializePinsx(){
   
   readPins();
   // wait before starting
-  while(xValue > 500);
-  while(xValue < 500);
+  while(xValue > 500){
+    readPins();} //code getting hung up. Possible to use an initializing button instead to indicate start of avg measuring?
+  while(xValue < 500){
+    readPins();}
   
   //start measuring average
   while(xValue > 500){
