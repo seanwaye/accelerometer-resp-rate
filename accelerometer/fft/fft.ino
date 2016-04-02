@@ -1,4 +1,9 @@
+#include <PlainFFT.h>
+
 #include "PlainFFT.h"
+
+#include <sys/types.h>
+
 
 /*
   Measure respiratory rate functionality
@@ -24,7 +29,7 @@
 */
 
 // global variables
-
+PlainFFT FFT = PlainFFT();
 const uint16_t samples = 64;
 double signalFrequency = 1000;
 double samplingFrequency = 5000;
@@ -60,7 +65,6 @@ uint8_t runOnce = 0x00;
 */
 int led_red = 8;
 int test_pin = 2;
-unsigned int tcnt2;
 int toggle = 0;
 float MS = 0.001;
 float period = 0;
@@ -73,7 +77,7 @@ int average;
 // (desired period = 1ms) / 8us = 125
 // MAX(uint8 = 255) + 1 - 125 = 131
 // save value globally for later reload in ISR
-int tcnt2 = 131;
+unsigned int tcnt2 = 131;
 
 // reset routine, completed on device reset
 /*
@@ -151,22 +155,19 @@ ISR(TIMER2_OVF_vect){
 
 // the loop routine runs over and over again forever:
 void loop() {
-  if (runOnce == 0x00) {
-        runOnce = 0x01;
-        // Collect data
-        // Want to wait until we populate an array of data points by reading from accelerometer
-        
-        printVector(vReal, samples, SCL_TIME);
-        FFT.windowing(vReal, samples, FFT_WIN_TYP_HAMMING, FFT_FORWARD);    // Weigh data
-        printVector(vReal, samples, SCL_TIME);
-        FFT.compute(vReal, vImag, samples, FFT_FORWARD); // Compute FFT
-        printVector(vReal, samples, SCL_INDEX);
-        printVector(vImag, samples, SCL_INDEX);
-        FFT.complexToMagnitude(vReal, vImag, samples); // Compute magnitudes
-        printVector(vReal, (samples >> 1), SCL_FREQUENCY);   
-        double x = FFT.majorPeak(vReal, samples, samplingFrequency);
-        Serial.println(x, 6);
-    }
+  // Collect data
+  // Want to wait until we populate an array of data points by reading from accelerometer
+  
+  printVector(vReal, samples, SCL_TIME);
+  FFT.windowing(vReal, samples);    // Weigh data
+  printVector(vReal, samples, SCL_TIME);
+  FFT.compute(vReal, vImag, samples, FFT_FORWARD); // Compute FFT
+  printVector(vReal, samples, SCL_INDEX);
+  printVector(vImag, samples, SCL_INDEX);
+  FFT.complexToMagnitude(vReal, vImag, samples); // Compute magnitudes
+  printVector(vReal, (samples >> 1), SCL_FREQUENCY);   
+  double x = FFT.majorPeak(vReal, samples, samplingFrequency);
+  Serial.println(x, 6);
 }
 
 void printVector(double *vD, uint8_t n, uint8_t scaleType) {
