@@ -39,7 +39,8 @@ uint8_t signalIntensity = 100;
 
 double vReal[samples];
 double vImag[samples];
-uint8_t runOnce = 0x00;
+double vAcquire[samples];
+volatile int initarray = 1;
 
 #define SCL_INDEX 0x00
 #define SCL_TIME 0x01
@@ -138,36 +139,104 @@ void timerinit(){
   
   // load and enable the timer
   TCNT2 = tcnt2;
-  // Don't enable the timer yet.. we want to synchronize it with a breath
   //TIMSK2 |= (1<< TOIE2);
 }
+
+volatile int ISRi = 0;
+volatile int ISRj = 0;
+volatile int computeFFT = 0;
+double vRealMini[minisamples];
+int minisamples = 8;
 
 //ISR for timer2 overflow
 ISR(TIMER2_OVF_vect){
   // reload the timer
   TCNT2 = tcnt2;
   // write to digital output pin to see with oscilloscope
-  digitalWrite(test_pin, toggle == 0 ? HIGH : LOW);
-  toggle = ~toggle;
+  //digitalWrite(test_pin, toggle == 0 ? HIGH : LOW);
+  //toggle = ~toggle;
   // read from accelerometer every X ms
-  readPins();
+  
+  if(initarray == 1){
+    vReal[ISRi] = analogRead(A0) + analogRead(A1) + analogRead(A2);
+    ISRi = ISRi+1;
+    if(ISRi == samples){
+      initarray = 0;
+      computeFFT = 1;
+    }
+  }
+  else{
+    if(computeFFT == 0){
+      // fill small array with data
+      vRealMini[ISRj] = analogRead(A0) + analogRead(A1) + analogRead(A2);
+      ISRj = ISRj+1;
+      if (ISRj == minisamples){
+        computeFFT = 1;
+      }
+    }
+  }
+  
+  
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
-  // Collect data
-  // Want to wait until we populate an array of data points by reading from accelerometer
+  int n;
+  double sum;
+  double average;
+  // Collect data in array called vReal, this array is populated by the ISR 
+  // to represent the most recent data collected by the accelerometer
+  // Data is transferred into array vAcquire at certain snapshots, and is passed
+  // to the PlainFFT system to calculate the FFT of the data. 
+  // vAcquire must be normailized around the average before calculating FFT
   
-  printVector(vReal, samples, SCL_TIME);
-  FFT.windowing(vReal, samples);    // Weigh data
-  printVector(vReal, samples, SCL_TIME);
-  FFT.compute(vReal, vImag, samples, FFT_FORWARD); // Compute FFT
-  printVector(vReal, samples, SCL_INDEX);
+  if(initarray ==1){
+    while(initarray == 1){
+      //wait while vReal is filled for the first time by ISR
+      //should only run once
+    }
+  }
+  else if(computeFFT == 0){
+    while computeFFT == 0){
+      // wait while vRealMini is filled
+      // once done, we need to move the data into vReal
+    }
+    // shift vReal by minisamples
+    for(n=samples-1; n >=minisamples; n--){
+      vReal[n-minisamples] = vReal[n];
+    }
+    // now add data from vRealMini into vReal
+    for(n=0; n<minisamples; n++){
+      vReal[samples-minisamples+n] = vRealMini[n];
+    }
+  }
+ 
+  // at this point should have a vector full of data vReal
+  // determine the average of vReal and transfer data into vAcquire
+  sum = 0.0;
+  for(n=0; n<samples; n++){
+    vAcquire[n] = vReal[n];
+    sum += vReal[n];
+  }
+  average = sum/samples;
+  // normalize data in vAcquire
+  for(n=0; n<samples; n++){
+    vAcquire[n] = vAcquire[n]-average;
+  }
+  
+  // vAcquire now holds normailized data. Compute FFT on vAquire
+  printVector(vAcuire, samples, SCL_TIME);
+  FFT.windowing(vAcquire, samples);    // Weigh data
+  printVector(vAcquire, samples, SCL_TIME);
+  FFT.compute(vAcquire, vImag, samples, FFT_FORWARD); // Compute FFT
+  printVector(vAcquire, samples, SCL_INDEX);
   printVector(vImag, samples, SCL_INDEX);
-  FFT.complexToMagnitude(vReal, vImag, samples); // Compute magnitudes
-  printVector(vReal, (samples >> 1), SCL_FREQUENCY);   
-  double x = FFT.majorPeak(vReal, samples, samplingFrequency);
+  FFT.complexToMagnitude(vAcquire, vImag, samples); // Compute magnitudes
+  printVector(vAcquire, (samples >> 1), SCL_FREQUENCY);   
+  double x = FFT.majorPeak(vAcquire, samples, samplingFrequency);
   Serial.println(x, 6);
+  // FFT is complete. Set flags to restart acquisition
+  computeFFT = 0;
 }
 
 void printVector(double *vD, uint8_t n, uint8_t scaleType) {
