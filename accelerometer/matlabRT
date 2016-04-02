@@ -1,0 +1,97 @@
+%code modified from that written by Yu Hin Hau on 02/04/2016
+
+
+% Serial Data Logger
+% Yu Hin Hau
+% 7/9/2013
+% **CLOSE PLOT TO END SESSION
+ 
+clear
+clc
+ 
+%User Defined Properties 
+serialPort = 'COM7';            % define COM port #
+plotTitle = 'Serial Data Log';  % plot title
+xLabel = 'Elapsed Time (s)';    % x-axis label
+yLabel = 'Data';                % y-axis label
+plotGrid = 'on';                % 'off' to turn off grid
+min = 0;                     % set y-min
+max = 1000;                      % set y-max
+scrollWidth = 10;               % display period in plot, plot entire data log if <= 0
+delay = .02;                    % make sure sample faster than resolution
+ 
+%Define Function Variables
+time = 0;
+data = 0;
+count = 0;
+ 
+%Set up Plot
+plotGraph = plot(time,data,'-mo',...
+                'LineWidth',1,...
+                'MarkerEdgeColor','k',...
+                'MarkerFaceColor',[.49 1 .63],...
+                'MarkerSize',2);
+             
+title(plotTitle,'FontSize',25);
+xlabel(xLabel,'FontSize',15);
+ylabel(yLabel,'FontSize',15);
+axis([0 10 min max]);
+grid(plotGrid);
+ 
+%Open Serial COM Port
+s = serial(serialPort)
+disp('Close Plot to End Session');
+fopen(s);
+ 
+tic
+ 
+while ishandle(plotGraph) %&& count<500) %Loop when Plot is Active
+     
+    dat = fscanf(s,'%f'); %Read Data from Serial as Float
+  
+    if(~isempty(dat) && isfloat(dat)) %Make sure Data Type is Correct        
+        count = count + 1;    
+        time(count) = toc;    %Extract Elapsed Time
+        data(count) = (dat(3)) %Extract 1st Data Element         
+         
+        %Set Axis according to Scroll Width
+        if(scrollWidth > 0)
+        set(plotGraph,'XData',time(time > time(count)-scrollWidth),'YData',data(time > time(count)-scrollWidth));
+        axis([time(count)-scrollWidth time(count) min max]);
+        else
+        set(plotGraph,'XData',time,'YData',data);
+        axis([0 time(count) min max]);
+        end
+         
+        %Allow MATLAB to Update Plot
+        pause(delay);
+    end
+    if count>500
+        break;
+    end
+end
+ fs = 50;
+ N = length(data);
+ omega = (0:N-1)*fs/N;
+%  
+ amplitude = abs(fft(data))/N;
+% 
+ plot(omega(2:N/4), amplitude(2:N/4), 'x');
+ 
+ domFreq = 0;
+ amp = 0;
+ for i=2:N
+     if amplitude(i)> amp
+         amp = amplitude(i);
+         domFreq = omega(i);
+     end
+ end
+ breathTime = 2*pi/domFreq
+ 
+Close Serial COM Port and Delete useless Variables
+fclose(s);
+clear count dat delay max min plotGraph plotGrid plotTitle s ...
+        scrollWidth serialPort xLabel yLabel;
+ 
+ 
+disp('Session Terminated...');
